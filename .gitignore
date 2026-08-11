@@ -1,0 +1,54 @@
+# ==========================================
+# 1. Build and Output Artifacts (Recursive)
+# ==========================================
+**/bin/
+**/obj/
+artifacts/
+out/
+
+# ==========================================
+# 2. IDE and Editor Specific Files
+# ==========================================
+# Visual Studio local settings and caches
+**/*.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# JetBrains Rider / IntelliJ
+.idea/
+*.sln.DotSettings.user
+
+# Visual Studio Code
+.vscode/
+!.vscode/extensions.json
+
+# ==========================================
+# 3. Environment & Sensitive Data
+# ==========================================
+# Keep template appsettings, but ignore secrets
+appsettings.Development.json
+appsettings.Local.json
+*.secrets.json
+.env
+**/Properties/launchSettings.json
+
+# ==========================================
+# 4. Operating System & Tool Caches
+# ==========================================
+# Windows & Mac system clutter
+Thumbs.db
+Ehthumbs.db
+.DS_Store
+
+# Package manager tracking
+.nuget/
+**/packages/
+
+# ==========================================
+# 5. Diagnostic Logs & Test Outputs
+# ==========================================
+*.log
+*.trx
+TestResults/
