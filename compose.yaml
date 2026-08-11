@@ -1,4 +1,17 @@
 services:
+  api:
+    build:
+      context: ./src/DotnetApi
+
+    environment:
+      ConnectionStrings__DefaultConnection: ${ConnectionStrings__DefaultConnection}
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      - postgres
+
   postgres:
     image: postgres:17
 
