@@ -10,7 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 // Add the database context to the services container (the dependency injection container). (Register the context)
 builder.Services.AddDbContext<TodoContext>(opt =>
-    opt.UseInMemoryDatabase("TodoList"));
+    opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
@@ -19,13 +19,6 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
-app.MapGet("/test-config", (IConfiguration config) =>
-{
-    // This will return the environment variable value for the connection string. Otherwise, it will return the value from appsettings.json.
-    var connectionString = config.GetConnectionString("DefaultConnection");
-    return Results.Ok(connectionString);
-});
 
 app.UseHttpsRedirection();
 
