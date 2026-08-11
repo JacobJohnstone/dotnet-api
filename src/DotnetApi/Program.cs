@@ -20,6 +20,13 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.MapGet("/test-config", (IConfiguration config) =>
+{
+    // This will return the environment variable value for the connection string. Otherwise, it will return the value from appsettings.json.
+    var connectionString = config.GetConnectionString("DefaultConnection");
+    return Results.Ok(connectionString);
+});
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
