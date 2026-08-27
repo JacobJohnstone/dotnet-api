@@ -10,6 +10,7 @@ namespace DotnetApi.Models.Messages
         public required Guid SenderId { get; set; }
         public required Guid ReceiverId { get; set; }
 
+        // Message content
         public required string Content { get; set; }
 
         // Status state
