@@ -1,6 +1,4 @@
-﻿using DotnetApi.Enums.Users;
-
-namespace DotnetApi.Models.Users
+﻿namespace DotnetApi.Models.Users
 {
     public class User
     {
@@ -8,12 +6,7 @@ namespace DotnetApi.Models.Users
 
         public string? DisplayName { get; set; } = null;
         public string? Email { get; set; }
-        public int PresetImageIndex { get; set; }
         public string? ProfilePictureUrl { get; set; }
-
-        // Premium status
-        public bool? HasPremium { get; set; }
-        public PremiumSource? PremiumSource { get; set; }
 
         // Notifications
         public string? NotificationToken { get; set; }  
