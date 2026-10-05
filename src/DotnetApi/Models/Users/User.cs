@@ -4,7 +4,8 @@
     {
         public Guid Id { get; set; }
 
-        public string? DisplayName { get; set; } = null;
+        public string? FirstName { get; set; } = null;
+        public string? LastName { get; set; } = null;
         public string? Email { get; set; }
         public string? ProfilePictureUrl { get; set; }
 
@@ -14,7 +15,8 @@
 
         // Profile Completion Flags
         public bool? OnboardingCompleted { get; set; }
-        public bool? ProfileCompleted { get; set; }
+
+        public decimal InitialAmount { get; set; } = 0;
 
         // Timestamps
         public DateTime? LastLogin { get; set; }

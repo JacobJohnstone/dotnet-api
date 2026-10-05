@@ -1,35 +1,18 @@
 using Microsoft.EntityFrameworkCore;
+
+// Used for implementing JWT authentication and authorization in future
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using TodoApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 // Add the database context to the services container (the dependency injection container). (Register the context)
 builder.Services.AddDbContext<TodoContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-// Add firebase authentication
-var firebaseProjectId = builder.Configuration.GetValue<string>("Firebase:ProjectId");
-var authorityUrl = $"https://securetoken.google.com/{firebaseProjectId}";
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
-{
-    options.Authority = authorityUrl;
-    options.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuer = true,
-        ValidIssuer = authorityUrl,
-        ValidateAudience = true,
-        ValidAudience = firebaseProjectId,
-        ValidateLifetime = true
-    };
-});
 
 var app = builder.Build();
 
