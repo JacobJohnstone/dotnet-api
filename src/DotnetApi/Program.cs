@@ -11,7 +11,7 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 // Add the database context to the services container (the dependency injection container). (Register the context)
-builder.Services.AddDbContext<TodoContext>(opt =>
+builder.Services.AddDbContext<BudgetContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
