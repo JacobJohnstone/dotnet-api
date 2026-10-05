@@ -1,49 +1,49 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using TodoApi.Models;
+using DotnetApi.Models.Financials;
 
 [Route("api/[controller]")]
 [ApiController]
 public class TodoItemsController : ControllerBase
 {
-    private readonly TodoContext _context;
-    public TodoItemsController(TodoContext context)
+    private readonly BudgetContext _context;
+    public TodoItemsController(BudgetContext context)
     {
         _context = context;
     }
 
-    // GET: api/TodoItem
+    // GET: api/Transaction
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<TodoItem>>> GetTodoItem()
+    public async Task<ActionResult<IEnumerable<Transaction>>> GetTransaction()
     {
-        return await _context.TodoItems.ToListAsync();
+        return await _context.Transactions.ToListAsync();
     }
 
-    // GET: api/TodoItem/5
+    // GET: api/Transaction/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<TodoItem>> GetTodoItem(long id)
+    public async Task<ActionResult<Transaction>> GetTransaction(long id)
     {
-        var todoitem = await _context.TodoItems.FindAsync(id);
+        var transaction = await _context.Transactions.FindAsync(id);
 
-        if (todoitem == null)
+        if (transaction == null)
         {
             return NotFound();
         }
 
-        return todoitem;
+        return transaction;
     }
 
-    // PUT: api/TodoItem/5
+    // PUT: api/Transaction/5
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutTodoItem(long? id, TodoItem todoitem)
+    public async Task<IActionResult> PutTransaction(Guid? id, Transaction transaction)
     {
-        if (id != todoitem.Id)
+        if (id != transaction.Id)
         {
             return BadRequest();
         }
 
-        _context.Entry(todoitem).State = EntityState.Modified;
+        _context.Entry(transaction).State = EntityState.Modified;
 
         try
         {
@@ -51,7 +51,7 @@ public class TodoItemsController : ControllerBase
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!TodoItemExists(id))
+            if (!TransactionExists(id))
             {
                 return NotFound();
             }
@@ -64,35 +64,35 @@ public class TodoItemsController : ControllerBase
         return NoContent();
     }
 
-    // POST: api/TodoItem
+    // POST: api/Transaction
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
-    public async Task<ActionResult<TodoItem>> PostTodoItem(TodoItem todoitem)
+    public async Task<ActionResult<Transaction>> PostTransaction(Transaction transaction)
     {
-        _context.TodoItems.Add(todoitem);
+        _context.Transactions.Add(transaction);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction("GetTodoItem", new { id = todoitem.Id }, todoitem);
+        return CreatedAtAction("GetTransaction", new { id = transaction.Id }, transaction);
     }
 
-    // DELETE: api/TodoItem/5
+    // DELETE: api/Transaction/5
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteTodoItem(long? id)
+    public async Task<IActionResult> DeleteTransaction(Guid? id)
     {
-        var todoitem = await _context.TodoItems.FindAsync(id);
-        if (todoitem == null)
+        var transaction = await _context.Transactions.FindAsync(id);
+        if (transaction == null)
         {
             return NotFound();
         }
 
-        _context.TodoItems.Remove(todoitem);
+        _context.Transactions.Remove(transaction);
         await _context.SaveChangesAsync();
 
         return NoContent();
     }
 
-    private bool TodoItemExists(long? id)
+    private bool TransactionExists(Guid? id)
     {
-        return _context.TodoItems.Any(e => e.Id == id);
+        return _context.Transactions.Any(e => e.Id == id);
     }
 }
