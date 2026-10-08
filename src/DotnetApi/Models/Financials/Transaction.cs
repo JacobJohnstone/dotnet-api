@@ -1,19 +1,20 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using DotnetApi.Enums;
+using DotnetApi.Models.Interfaces;
 
 namespace DotnetApi.Models.Financials
 {
     /// <summary>
-    /// The entity for tracking expenses and assets
+    ///     The entity for tracking expenses and assets
     /// </summary>
     [Table("Transactions")]
-    public class Transaction
+    public class Transaction : ITimestampEntity
     {
         [Key]
-        public Guid Id { get; set; }
+        public Guid Id { get; init; }
         [ForeignKey("UserId")]
-        public Guid UserId { get; set; }
+        public Guid UserId { get; init; }
 
         // Transaction properties
         [StringLength(100)]
@@ -24,11 +25,11 @@ namespace DotnetApi.Models.Financials
 
         // Recurring transaction properties
         public RecurrenceType? RecurrenceType { get; set; }
-        public DateTime? RecurrenceStartDate { get; set; } = DateTime.UtcNow;
+        public DateTime? RecurrenceStartDate { get; set; }
         public DateTime? RecurrenceEndDate { get; set; }
         
         // Timestamps
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; init; }
         public DateTime UpdatedAt { get; set; }
     }
 }

@@ -11,6 +11,8 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddEndpointsApiExplorer();
+// add swagger for API documentation
+builder.Services.AddSwaggerGen();
 
 // Authentication and authorization
 // Attach service that implements the IAuthenticationService
@@ -20,10 +22,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options => builder.Configuration.Bind("JwtSettings", options));
 
 builder.Services.AddAuthorization();
-
-// add swagger for API documentation
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 // Add the database context to the services container (the dependency injection container). (Register the context)
 builder.Services.AddDbContext<BudgetContext>(opt =>

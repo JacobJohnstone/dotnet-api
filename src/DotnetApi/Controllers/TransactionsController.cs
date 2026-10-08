@@ -4,24 +4,24 @@ using DotnetApi.Models.Financials;
 
 [Route("api/[controller]")]
 [ApiController]
-public class TodoItemsController : ControllerBase
+public class TransactionsController : ControllerBase
 {
     private readonly BudgetContext _context;
-    public TodoItemsController(BudgetContext context)
+    public TransactionsController(BudgetContext context)
     {
         _context = context;
     }
 
     // GET: api/Transaction
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Transaction>>> GetTransaction()
+    public async Task<ActionResult<IEnumerable<Transaction>>> GetTransactions()
     {
         return await _context.Transactions.ToListAsync();
     }
 
-    // GET: api/Transaction/5
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Transaction>> GetTransaction(long id)
+    // GET: api/Transaction/{guid}
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<Transaction>> GetTransaction(Guid id)
     {
         var transaction = await _context.Transactions.FindAsync(id);
 
@@ -33,9 +33,9 @@ public class TodoItemsController : ControllerBase
         return transaction;
     }
 
-    // PUT: api/Transaction/5
+    // PUT: api/Transaction/{guid}
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-    [HttpPut("{id}")]
+    [HttpPut("{id:guid}")]
     public async Task<IActionResult> PutTransaction(Guid? id, Transaction transaction)
     {
         if (id != transaction.Id)
@@ -67,6 +67,11 @@ public class TodoItemsController : ControllerBase
     // POST: api/Transaction
     // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
     [HttpPost]
+    [ProducesResponseType(201)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(500)]
+    [Consumes("application/json")]
+    [Produces("application/json")]
     public async Task<ActionResult<Transaction>> PostTransaction(Transaction transaction)
     {
         _context.Transactions.Add(transaction);
@@ -75,8 +80,8 @@ public class TodoItemsController : ControllerBase
         return CreatedAtAction("GetTransaction", new { id = transaction.Id }, transaction);
     }
 
-    // DELETE: api/Transaction/5
-    [HttpDelete("{id}")]
+    // DELETE: api/Transaction/{guid}
+    [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteTransaction(Guid? id)
     {
         var transaction = await _context.Transactions.FindAsync(id);
