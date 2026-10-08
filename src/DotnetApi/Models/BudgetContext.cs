@@ -1,4 +1,5 @@
-﻿using DotnetApi.Models.Users;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using DotnetApi.Models.Users;
 using Microsoft.EntityFrameworkCore;
 using DotnetApi.Models.Financials;
 
@@ -10,6 +11,5 @@ public class BudgetContext : DbContext
 	public BudgetContext(DbContextOptions<BudgetContext> options) : base(options) { }
 
 	public DbSet<Transaction> Transactions { get; set; } = null!;
-
 	public DbSet<User> Users { get; set; } = null!;
 }

@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 namespace DotnetApi.Migrations
 {
-    [DbContext(typeof(TodoContext))]
+    [DbContext(typeof(BudgetContext))]
     [Migration("20260811173143_InitialCreate")]
     partial class InitialCreate
     {
