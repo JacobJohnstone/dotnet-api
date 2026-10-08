@@ -16,12 +16,13 @@ builder.Services.AddEndpointsApiExplorer();
 // Attach service that implements the IAuthenticationService
 // Responsible for authenticating a user, or responding when an unauthenticated user tries to access a restricted resource
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, 
-        options => builder.Configuration.Bind("JwtSettings", options))
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme,
+        options => builder.Configuration.Bind("JwtSettings", options));
 
 builder.Services.AddAuthorization();
 
 // add swagger for API documentation
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add the database context to the services container (the dependency injection container). (Register the context)
@@ -40,6 +41,8 @@ if (app.Environment.IsDevelopment())
 
 // register the middleware pipeline
 app.UseHttpsRedirection();
+
+app.MapSwagger().RequireAuthorization();
 
 app.UseAuthentication(); // decodes the JWT token and sets the user principal for the request
 app.UseAuthorization(); // evaluates permissions against the user principal and the endpoint's authorization policies
