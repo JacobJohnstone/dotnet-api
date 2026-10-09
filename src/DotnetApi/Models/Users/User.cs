@@ -14,21 +14,28 @@ namespace DotnetApi.Models.Users
     {
         public Guid Id { get; init; } = Guid.NewGuid();
 
-        [Required]
-        [StringLength(50)]
+        // String composite formatting sets the following within the error message for string length attributes:
+        // 0 - the field name
+        // 1 - the maximum value
+        // 2 - the minimum value
+        [StringLength(50, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 1)]
         public string FirstName { get; set; }
-        [Required]
-        [StringLength(50)]
+        
+        [StringLength(50,  ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 1)]
         public string LastName { get; set; }
-        [Required]
-        [StringLength(50)]
+        
+        [StringLength(50,  ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 5)]
+        [EmailAddress(ErrorMessage = "Please enter a valid email address.")]
         public string Email { get; set; }
+        
+        [StringLength(50, ErrorMessage =  "The {0} must be at least {2} characters long.", MinimumLength = 6)]
+        public string Password { get; set; }
         [StringLength(50)]
         public string? ProfilePictureUrl { get; set; }
 
         // Notifications
-        [StringLength(50)]
-        public string? NotificationToken { get; set; }
+        [StringLength(50)] 
+        public string? NotificationToken { get; set; } = null;
         // Provided for future mobile home page badge value
         public int BadgeCount { get; set; } = 0;
 
@@ -43,7 +50,7 @@ namespace DotnetApi.Models.Users
         // Initialize null instead of 0 in order to tell the difference
         // between a provided value of 0 and no provided value at all
         public decimal? BaseAccountBalance { get; set; } = null;
-
+        
         public bool IsActive { get; set; } = true;
         
         // Timestamps
