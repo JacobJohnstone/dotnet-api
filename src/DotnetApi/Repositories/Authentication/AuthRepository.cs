@@ -1,15 +1,25 @@
-﻿using DotnetApi.Models.Users;
+﻿using System.Security.Claims;
+using DotnetApi.Models.Users;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace DotnetApi.Repositories;
+namespace DotnetApi.Repositories.Authentication;
 
-public class AuthenticationRepository(BudgetContext dbContext, ILogger<AuthenticationRepository> logger)
+public class AuthRepository(
+    BudgetContext dbContext, 
+    ILogger<AuthRepository> logger, 
+    IPasswordHasher<CreateUserDto> passwordHasher,
+    HttpContext httpContext
+    ) : IAuthRepository
 {
     // Fields (populated by primary constructor) //
     
     private readonly BudgetContext _context = dbContext;
-    private readonly ILogger<AuthenticationRepository> _logger = logger;
+    private readonly ILogger<AuthRepository> _logger = logger;
+    private readonly IPasswordHasher<CreateUserDto> _passwordHasher = passwordHasher;
+    private readonly HttpContext _httpContext = httpContext;
     
     // Methods //
     
@@ -43,6 +53,32 @@ public class AuthenticationRepository(BudgetContext dbContext, ILogger<Authentic
             _logger.LogError($"User {user.Email} failed to login");
             throw new InvalidOperationException("Invalid email or password.");
         }
+        
+        // initialize base claims
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Name, user.FirstName),
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString())
+        };
+        
+        // initialize claims principal
+        var claimsIdentity = new ClaimsIdentity(claims, JwtBearerDefaults.AuthenticationScheme);
+        var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+        
+        // initialized
+        var authProperties = new AuthenticationProperties
+        {
+            IsPersistent = true,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(5),
+            IssuedUtc = DateTimeOffset.UtcNow,
+        };
+        
+       // login
+       await _httpContext.SignInAsync(
+                JwtBearerDefaults.AuthenticationScheme,
+                claimsPrincipal,
+                authProperties);
         
         // Update "last logged in" flag
         user.LastLogin = DateTime.UtcNow;
@@ -87,8 +123,7 @@ public class AuthenticationRepository(BudgetContext dbContext, ILogger<Authentic
         }
 
         // hash password
-        var passwordHasher = new PasswordHasher<CreateUserDto>();
-        var passwordHash = passwordHasher.HashPassword(user, user.Password);
+        var passwordHash = _passwordHasher.HashPassword(user, user.Password);
         
         // instantiate new user object
         var newUser = new User
@@ -104,11 +139,37 @@ public class AuthenticationRepository(BudgetContext dbContext, ILogger<Authentic
         // submit user to the database ONLY EF TRACKING
         await _context.Users.AddAsync(newUser);
         
+        // authenticate user with IAuthenticationService
+        // initialize base claims
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Name, user.FirstName),
+            new Claim(ClaimTypes.NameIdentifier, newUser.Id.ToString())
+        };
+        
+        // initialize claims principal
+        var claimsIdentity = new ClaimsIdentity(claims, JwtBearerDefaults.AuthenticationScheme);
+        var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+        
+        // initialized
+        var authProperties = new AuthenticationProperties
+        {
+            IsPersistent = true,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(5),
+            IssuedUtc = DateTimeOffset.UtcNow,
+        };
+        
+        // login
+        await _httpContext.SignInAsync(
+            JwtBearerDefaults.AuthenticationScheme,
+            claimsPrincipal,
+            authProperties);
+        
         // REQUIRED: push your tracked changes to the actual DB
         await _context.SaveChangesAsync();
 
         // return new user object
-        // TODO: return userDto instead?
         return newUser;
     }
 }

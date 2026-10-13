@@ -1,8 +1,11 @@
+using DotnetApi.Models.Users;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 
 // Used for implementing JWT authentication and authorization in future
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +29,11 @@ builder.Services.AddAuthorization();
 // Add the database context to the services container (the dependency injection container). (Register the context)
 builder.Services.AddDbContext<BudgetContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register the authentication service
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+// Register password hasher instance
+builder.Services.AddSingleton<IPasswordHasher<CreateUserDto>, PasswordHasher<CreateUserDto>>();
 
 var app = builder.Build();
 
