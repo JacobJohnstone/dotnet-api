@@ -57,6 +57,73 @@ await _context.Users.AddAsync(newUser);
 await _context.SaveChangesAsync();
 ```
 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Additionally, updating entities has its own workflow. Since entity tracks
+object changes in memory, when fetching entities from the db it tracks them to watch for changes.
+In this scenario, we have to explicitly save the changes to the db when we are done out updates, using 
+something like `_context.SaveChangesAsync()`. Sometimes though, we might need a reference from the db, but
+not want to make any changes to it, for example a read-only operation. In this case, we don't need EF to 
+be tracking our object, as we don't plan on making any changes. Here we can increase performance by explicitly
+telling EF to not listen to out changes using the `.AsNoTracking()` method. For example:
+
+```
+// USER LOGIN //
+
+// Check if a user exists with this email (and only one instance exists)
+var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == email);
+
+// ... handle errors ...
+// ... verify password ...
+
+// Update "last logged in" flag
+user.LastLogin = DateTime.UtcNow;
+
+// Persist login timestamp update
+try
+{
+    _context.SaveChangesAsync();
+}
+catch
+{
+    _logger.LogError($"Failed to update user's ({user.Email}) last logged in timeout.");
+}
+
+return user;
+```
+
+Above we see an instance where we make a change to the user timestamp directly on the object
+(no `.Update()` method or anything like that), and then persist the change by calling
+`.SaveChangesAsync()`. Now, an example where we don't care to track the user we fetch:
+
+```
+// REGISTER NEW USER
+
+// use asNoTracking as this is a readOnly operation
+var alreadyExists = await _context.Users.AsNoTracking().AnyAsync(u => u.Email == user.Email);
+
+// ... "email already exists" error ...
+// ... hash password ...
+
+// instantiate new user object
+var newUser = new User
+{
+    Id = Guid.NewGuid(),
+    FirstName = user.FirstName,
+    LastName = user.LastName,
+    Email = user.Email,
+    ProfilePictureUrl = user.ProfilePictureUrl,
+    Password =  passwordHash,
+};
+
+// submit user to the database (ONLY EF TRACKING)
+await _context.Users.AddAsync(newUser);
+
+// REQUIRED: push your tracked changes to the actual DB
+await _context.SaveChangesAsync();
+
+// return new user object
+return newUser;
+```
+
 ---
 
 #### Handling Exceptions
