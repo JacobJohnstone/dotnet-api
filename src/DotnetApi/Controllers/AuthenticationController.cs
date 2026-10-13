@@ -11,11 +11,15 @@ namespace DotnetApi.Controllers;
 ///     services, and returning a response.
 /// </summary>
 /// <param name="context">The DB context, passed in through DI</param>
-public class AuthenticationController(BudgetContext context, IAuthRepository authRepository, IAuthenticationService authenticationService) : ControllerBase
+public class AuthenticationController(
+    BudgetContext context, 
+    IAuthRepository authRepository, 
+    IAuthenticationService authenticationService,
+    ILogger<AuthenticationController> logger) : ControllerBase
 {
     // Controller fields instantiated by "primary controller"
     private readonly BudgetContext _context = context;
-    // private readonly ILogger<AuthenticationController> _logger = logger;
+    private readonly ILogger<AuthenticationController> _logger = logger;
     private readonly IAuthenticationService _authenticationService = authenticationService;
     private readonly IAuthRepository _authenticationRepository = authRepository;
 
@@ -49,7 +53,20 @@ public class AuthenticationController(BudgetContext context, IAuthRepository aut
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Logout()
     {
-        await HttpContext.SignOutAsync(JwtBearerDefaults.AuthenticationScheme);
+        try
+        {
+            // perform logout
+            await HttpContext.SignOutAsync(JwtBearerDefaults.AuthenticationScheme);
+            _logger.LogInformation("User logged out.");
+        }
+        catch
+        {
+            // return 500 and log critical error if unsuccessful
+            logger.LogCritical("Logout failed.");
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
+        
+        // return 200 ok if successfully logged out
         return Ok("Logged out successfully");
     }
     

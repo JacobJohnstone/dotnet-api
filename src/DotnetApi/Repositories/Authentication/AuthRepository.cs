@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using DotnetApi.Models;
 using DotnetApi.Models.Users;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -31,7 +32,7 @@ public class AuthRepository(
     /// <param name="email">The user's email</param>
     /// <param name="password">The user's secret</param>
     /// <returns></returns>
-    public async Task<User?> Login(string email, string password)
+    public async Task<Result<User>> Login(string email, string password)
     {
         // Check if a user exists with this email (and only one instance exists)
         var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == email);
@@ -44,8 +45,8 @@ public class AuthRepository(
         }
         
         // check if hashed password matches, if so login, else return error
-        var passwordHasher = new PasswordHasher<User>();
-        var passwordHash = passwordHasher.VerifyHashedPassword(user, user.Password, password);
+        var localHasher = new PasswordHasher<User>();
+        var passwordHash = localHasher.VerifyHashedPassword(user, user.Password, password);
 
         // if the user provided the wrong password, throw an error
         if (passwordHash == PasswordVerificationResult.Failed)
@@ -95,7 +96,7 @@ public class AuthRepository(
 
         // future: check if user is banned, inactive, deleted etc.
 
-        return user;
+        return Result<User>.Success(user);
     }
 
     /// <summary>
@@ -104,7 +105,7 @@ public class AuthRepository(
     /// </summary>
     /// <param name="user">CreateUserDto payload</param>
     /// <returns>The created user entity</returns>
-    public async Task<User> Register(CreateUserDto user)
+    public async Task<Result<User>> Register(CreateUserDto user)
     {
         /***********************************************************************************
             If api reaches this function coming from a controller,
@@ -170,6 +171,6 @@ public class AuthRepository(
         await _context.SaveChangesAsync();
 
         // return new user object
-        return newUser;
+        return Result<User>.Success(newUser);
     }
 }
