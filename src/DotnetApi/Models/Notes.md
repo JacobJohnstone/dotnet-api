@@ -5,8 +5,8 @@
 #### What is a Model?
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A model is similar to a type in TypeScript. It defines
-the field a specific entity has, allowing the developer to define field types, whether 
-it's a nullable field, and apply any custom attributes such as [Required].
+the fields a specific entity has, allowing the developer to define field types, whether 
+it's a nullable field, and apply any attributes such as `[Required]`.
 
 ---
 
