@@ -12,7 +12,6 @@ namespace DotnetApi.Repositories.Authentication;
 public class AuthRepository(
     BudgetContext dbContext, 
     ILogger<AuthRepository> logger, 
-    IPasswordHasher<CreateUserDto> passwordHasher,
     HttpContext httpContext
     ) : IAuthRepository
 {
@@ -20,7 +19,6 @@ public class AuthRepository(
     
     private readonly BudgetContext _context = dbContext;
     private readonly ILogger<AuthRepository> _logger = logger;
-    private readonly IPasswordHasher<CreateUserDto> _passwordHasher = passwordHasher;
     private readonly HttpContext _httpContext = httpContext;
     
     // Methods //
@@ -46,11 +44,11 @@ public class AuthRepository(
         }
         
         // check if hashed password matches, if so login, else return error
-        var localHasher = new PasswordHasher<User>();
-        var passwordHash = localHasher.VerifyHashedPassword(user, user.Password, password);
+        var hasher =  new PasswordHasher<User>();
+        var verificationResult = hasher.VerifyHashedPassword(user, user.PasswordHash, password);
 
         // if the user provided the wrong password, throw an error
-        if (passwordHash == PasswordVerificationResult.Failed)
+        if (verificationResult == PasswordVerificationResult.Failed)
         {
             _logger.LogError($"User {user.Email} failed to login");
             throw new InvalidOperationException("Invalid email or password.");
@@ -125,17 +123,21 @@ public class AuthRepository(
         }
 
         // hash password
-        var passwordHash = _passwordHasher.HashPassword(user, user.Password);
+        var hasher =  new PasswordHasher<CreateUserDto>();
+        var passwordHash = hasher.HashPassword(user, user.Password);
         
         // instantiate new user object
         var newUser = new User
         {
+            // Payload fields (user input)
             Id = Guid.NewGuid(),
             FirstName = user.FirstName,
             LastName = user.LastName,
             Email = user.Email,
             ProfilePictureUrl = user.ProfilePictureUrl,
-            Password =  passwordHash,
+            
+            // Newly hashed password
+            PasswordHash = passwordHash,
         };
 
         // submit user to the database ONLY EF TRACKING

@@ -1,4 +1,5 @@
 using DotnetApi.Models.Users;
+using DotnetApi.Repositories.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,8 +33,6 @@ builder.Services.AddDbContext<BudgetContext>(opt =>
 
 // Register the authentication service
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
-// Register password hasher instance
-builder.Services.AddSingleton<IPasswordHasher<CreateUserDto>, PasswordHasher<CreateUserDto>>();
 
 var app = builder.Build();
 
