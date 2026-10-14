@@ -3,11 +3,14 @@ services:
     build:
       context: ./src/DotnetApi
 
+    ports:
+      - "5000:8080" # Map host port 8080 to container HTTP port
+      - "5001:8081" # Map host port 5000 to Container HTTPS port
+
     environment:
       ConnectionStrings__DefaultConnection: ${ConnectionStrings__DefaultConnection}
-
-    ports:
-      - "8080:8080"
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTPS_PORT: 5001 # inform middleware where to redirect
 
     depends_on:
       - postgres

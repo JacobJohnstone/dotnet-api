@@ -31,7 +31,9 @@ public class AuthenticationController(
     [Route("api/v1/[controller]/register")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> Register(CreateUserDto payload)
+    public async Task<IActionResult> Register(
+        [FromBody] CreateUserDto payload
+    )
     {
         try
         {
@@ -68,12 +70,14 @@ public class AuthenticationController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> Login(string email, string password)
+    public async Task<IActionResult> Login(
+        [FromBody] LoginDto payload
+    )
     {
         try
         {
             // perform login through auth service
-            var result = await _authenticationRepository.Login(email, password);
+            var result = await _authenticationRepository.Login(payload.email, payload.password);
 
             // if the login failed, return a 400
             if (!result.IsSuccess)

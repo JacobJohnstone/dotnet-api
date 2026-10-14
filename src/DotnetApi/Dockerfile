@@ -64,8 +64,8 @@ WORKDIR /app
 # of the final runtime image.
 COPY --from=build /app/publish .
 
-# listen on port 8080
-EXPOSE 8080
+# listen on port 5000
+EXPOSE 5000
 
 # Define the application that Docker should run when the container starts.
 #

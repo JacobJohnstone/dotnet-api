@@ -18,6 +18,16 @@ builder.Services.AddEndpointsApiExplorer();
 // add swagger for API documentation
 builder.Services.AddSwaggerGen();
 
+// CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", policy =>
+    {
+        policy.AllowAnyOrigin();
+        policy.AllowAnyMethod();
+    });
+});
+
 // Authentication and authorization
 // Attach service that implements the IAuthenticationService
 // Responsible for authenticating a user, or responding when an unauthenticated user tries to access a restricted resource
@@ -45,7 +55,10 @@ if (app.Environment.IsDevelopment())
 }
 
 // register the middleware pipeline
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.MapSwagger().RequireAuthorization();
 
