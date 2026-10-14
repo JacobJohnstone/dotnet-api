@@ -1,5 +1,15 @@
-﻿namespace DotnetApi.Models;
+﻿### Common
 
+---
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Common contains all the shared models found in 
+the budget app api. Things that are more for standardizations and shared functionalities
+are found here. An example is the "Result" class, which creates a standard response
+shape for our api, allowing me to handle both successful and unsuccessful operations
+cleanly. It offers a success flag, and contains fields for storing both the data (if 
+successful) and the exception (if unsuccessful):
+
+```
 public class Result<TData>
 {
     public TData Data { get; }
@@ -25,3 +35,4 @@ public class Result<TData>
     public static Result<TData> Success(TData value) => new(value);
     public static Result<TData> Failure(Exception exception) => new(exception);
 }
+```

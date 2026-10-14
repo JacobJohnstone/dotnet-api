@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using DotnetApi.Models;
+using DotnetApi.Models.Common;
 using DotnetApi.Models.Users;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

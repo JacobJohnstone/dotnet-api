@@ -1,4 +1,5 @@
 ﻿using DotnetApi.Repositories;
+using DotnetApi.Repositories.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
