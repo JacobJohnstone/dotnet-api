@@ -33,14 +33,16 @@ public class AuthRepository(
     /// <returns></returns>
     public async Task<Result<User>> Login(string email, string password)
     {
+        _logger.LogInformation($"Logging in user {email}...");
+        
         // Check if a user exists with this email (and only one instance exists)
         var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == email);
         
         // If a user does not exist return an error
         if (user == null)
         {
-            _logger.LogError($"User {email} not found");
-            throw new InvalidOperationException("Invalid email or password.");
+            _logger.LogInformation($"User {email} not found");
+            return Result<User>.Failure("Invalid email or password.");
         }
         
         // check if hashed password matches, if so login, else return error
@@ -50,9 +52,11 @@ public class AuthRepository(
         // if the user provided the wrong password, throw an error
         if (verificationResult == PasswordVerificationResult.Failed)
         {
-            _logger.LogError($"User {user.Email} failed to login");
-            throw new InvalidOperationException("Invalid email or password.");
+            _logger.LogInformation($"User {user.Email} failed to login - incorrect password");
+            return Result<User>.Failure("Invalid email or password.");
         }
+        
+        _logger.LogInformation($"User {user.Email} password verified successfully.");
         
         // initialize base claims
         var claims = new List<Claim>
@@ -76,9 +80,12 @@ public class AuthRepository(
         
        // login
        await _httpContext.SignInAsync(
-                JwtBearerDefaults.AuthenticationScheme,
-                claimsPrincipal,
-                authProperties);
+            JwtBearerDefaults.AuthenticationScheme,
+            claimsPrincipal,
+            authProperties
+        );
+       
+       _logger.LogInformation($"User {user.Email} successfully logged in, JWT issued.");
         
         // Update "last logged in" flag
         user.LastLogin = DateTime.UtcNow;
@@ -86,11 +93,14 @@ public class AuthRepository(
         // Persist login timestamp update
         try
         {
-            _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
+            _logger.LogInformation($"User {user.Email} 'last logged in' timestamp updated.");
         }
         catch
         {
-            _logger.LogError($"Failed to update user's ({user.Email}) last logged in timeout.");
+            _logger.LogWarning($"Failed to update user's ({user.Email}) last logged.");
+            
+            // no early return, as this doesn't affect the core functionality, but should be noted.
         }
 
         // future: check if user is banned, inactive, deleted etc.
@@ -111,6 +121,8 @@ public class AuthRepository(
             password should be validated as present and of valid length (due to attributes) 
         ***********************************************************************************/
 
+        _logger.LogInformation($"Registering user {user.FirstName} {user.LastName}");
+        
         // check if provided email is already in use.
         // use asNoTracking as this is a readOnly operation
         var alreadyExists = await _context.Users.AsNoTracking().AnyAsync(u => u.Email == user.Email);
@@ -118,13 +130,15 @@ public class AuthRepository(
         // if a user already exists with this email, return an error.
         if (alreadyExists)
         {
-            _logger.LogError($"User {user.Email} already exists");
-            throw new InvalidOperationException("This email is already in use.");
+            _logger.LogInformation($"User {user.Email} already exists");
+            return Result<User>.Failure($"This email is already in use.");
         }
 
         // hash password
         var hasher =  new PasswordHasher<CreateUserDto>();
         var passwordHash = hasher.HashPassword(user, user.Password);
+        
+        logger.LogInformation($"Password hashed for user {user.FirstName} {user.LastName}");
         
         // instantiate new user object
         var newUser = new User
@@ -142,6 +156,8 @@ public class AuthRepository(
 
         // submit user to the database ONLY EF TRACKING
         await _context.Users.AddAsync(newUser);
+        
+        _logger.LogInformation($"User {user.FirstName} {user.LastName} created in EF");
         
         // authenticate user with IAuthenticationService
         // initialize base claims
@@ -168,10 +184,15 @@ public class AuthRepository(
         await _httpContext.SignInAsync(
             JwtBearerDefaults.AuthenticationScheme,
             claimsPrincipal,
-            authProperties);
+            authProperties
+        );
+        
+        _logger.LogInformation($"User {user.FirstName} {user.LastName} signed in, JWT issued.");
         
         // REQUIRED: push your tracked changes to the actual DB
         await _context.SaveChangesAsync();
+        
+        _logger.LogInformation($"User {user.FirstName} {user.LastName} persisted to DB.");
 
         // return new user object
         return Result<User>.Success(newUser);

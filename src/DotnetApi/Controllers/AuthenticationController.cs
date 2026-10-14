@@ -38,7 +38,7 @@ public class AuthenticationController(
     {
         try
         {
-            var user = await _authenticationRepository.Login(email, password);
+            var result = await _authenticationRepository.Login(email, password);
         }
         catch
         {
