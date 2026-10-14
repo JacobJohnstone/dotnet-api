@@ -7,7 +7,8 @@ public class Result<TData>
     public string? Exception { get; }
 
     // successful response constructor format
-    protected Result(TData data)
+    // private to ensure static methods are used for instantiation
+    private Result(TData data)
     {
         Data = data;
         IsSuccess = true;
@@ -15,7 +16,8 @@ public class Result<TData>
     }
     
     // unsuccessful response constructor format
-    protected Result(string exception)
+    // private to ensure static methods are used for instantiation
+    private Result(string exception)
     {
         Data = default;
         IsSuccess = false;

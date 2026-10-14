@@ -38,14 +38,16 @@ public class AuthenticationController(
     {
         try
         {
+            // perform login through auth service
             var result = await _authenticationRepository.Login(email, password);
+            return Ok(result);
         }
         catch
         {
-            return Unauthorized();
+            // return 500 and log critical error if unsuccessful
+            logger.LogCritical("Login failed.");
+            return StatusCode(StatusCodes.Status500InternalServerError);
         }
-        
-        return Ok();
     }
 
     [HttpPost("logout")]

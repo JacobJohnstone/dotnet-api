@@ -29,8 +29,8 @@ public class AuthRepository(
     ///     they are not inactive/banned, before returning a successful login. 
     /// </summary>
     /// <param name="email">The user's email</param>
-    /// <param name="password">The user's secret</param>
-    /// <returns></returns>
+    /// <param name="password">The user's plaintext secret</param>
+    /// <returns>A result object with the user entity who signed in (set to the "Data" field), or an error message (set to the "Exception" field).</returns>
     public async Task<Result<User>> Login(string email, string password)
     {
         _logger.LogInformation($"Logging in user {email}...");
@@ -109,8 +109,8 @@ public class AuthRepository(
     }
 
     /// <summary>
-    ///     Accepts a user creation DTO and adds user to
-    ///     the database. Returns the newly created user
+    ///     Accepts a user creation DTO and adds the user to
+    ///     the database. Returns the newly created user entity.
     /// </summary>
     /// <param name="user">CreateUserDto payload</param>
     /// <returns>The created user entity</returns>
