@@ -21,11 +21,14 @@ builder.Services.AddSwaggerGen();
 // CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CorsPolicy", policy =>
-    {
-        policy.AllowAnyOrigin();
-        policy.AllowAnyMethod();
-    });
+    options.AddPolicy("CorsPolicy", 
+policy =>
+            {
+                policy.WithOrigins("http://localhost:3000/")
+                    .AllowAnyOrigin()
+                    .AllowAnyMethod();
+            }
+    );
 });
 
 // Authentication and authorization
@@ -59,6 +62,10 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
 }
+
+app.UseRouting();
+
+app.UseCors("CorsPolicy");
 
 app.MapSwagger().RequireAuthorization();
 
