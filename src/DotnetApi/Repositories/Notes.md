@@ -1,10 +1,5 @@
 ﻿# Repositories
 
-### Questions ###
-
-- are "repository" and "service" synonymous?
-- repositories would be dependency injected into controllers.. right?
-
 ## Notes
 
 ---
@@ -123,6 +118,10 @@ await _context.SaveChangesAsync();
 // return new user object
 return newUser;
 ```
+
+Lastly to note, we can make local changes in a service, then call .SaveChangesAsync() in
+the respository (which has the db context to do so) and it will save the changes
+made in the service, assuming they were all tracked by EF. (verify this point).
 
 ---
 

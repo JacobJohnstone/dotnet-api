@@ -1,5 +1,5 @@
 ﻿using DotnetApi.Models.Users;
-using DotnetApi.Repositories.Authentication;
+using DotnetApi.Services.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -13,17 +13,13 @@ namespace DotnetApi.Controllers;
 /// </summary>
 /// <param name="context">The DB context, passed in through DI</param>
 public class AuthenticationController(
-        BudgetContext context, 
-        IAuthRepository authRepository, 
-        IAuthenticationService authenticationService,
+        IAuthService authService,
         ILogger<AuthenticationController> logger
     ) : ControllerBase
 {
-    // Controller fields instantiated by "primary controller"
-    private readonly BudgetContext _context = context;
+    // Fields instantiated by primary constructor //
     private readonly ILogger<AuthenticationController> _logger = logger;
-    private readonly IAuthenticationService _authenticationService = authenticationService;
-    private readonly IAuthRepository _authenticationRepository = authRepository;
+    private readonly IAuthService _authenticationService = authService;
 
     #region AuthenticationRoutes
     
@@ -38,7 +34,7 @@ public class AuthenticationController(
         try
         {
             // register through auth service
-            var result = await _authenticationRepository.Register(payload);
+            var result = await _authenticationService.Register(payload);
 
             // If the email is taken, return a 409 conflict
             if (result.Exception == "This email is already in use.")
@@ -77,7 +73,7 @@ public class AuthenticationController(
         try
         {
             // perform login through auth service
-            var result = await _authenticationRepository.Login(payload.email, payload.password);
+            var result = await _authenticationService.Login(payload);
 
             // if the login failed, return a 400
             if (!result.IsSuccess)

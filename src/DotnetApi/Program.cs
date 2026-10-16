@@ -1,12 +1,9 @@
-using DotnetApi.Models.Users;
-using DotnetApi.Repositories.Authentication;
-using Microsoft.AspNetCore.Authentication;
+using DotnetApi.Repositories.Users;
+using DotnetApi.Services.Authentication;
 using Microsoft.EntityFrameworkCore;
 
 // Used for implementing JWT authentication and authorization in future
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,17 +16,17 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("CorsPolicy", 
-policy =>
-            {
-                policy.WithOrigins("http://localhost:3000/")
-                    .AllowAnyOrigin()
-                    .AllowAnyMethod();
-            }
-    );
-});
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy("CorsPolicy", 
+// policy =>
+//             {
+//                 policy.WithOrigins("http://localhost:3000/", "http://localhost:3000")
+//                     .AllowAnyOrigin()
+//                     .AllowAnyMethod();
+//             }
+//     );
+// });
 
 // Authentication and authorization
 // Attach service that implements the IAuthenticationService
@@ -45,7 +42,8 @@ builder.Services.AddDbContext<BudgetContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Register the authentication service
-builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
@@ -65,7 +63,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseRouting();
 
-app.UseCors("CorsPolicy");
+// app.UseCors("CorsPolicy");
 
 app.MapSwagger().RequireAuthorization();
 
