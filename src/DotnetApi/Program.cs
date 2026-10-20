@@ -16,17 +16,18 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // CORS
-// builder.Services.AddCors(options =>
-// {
-//     options.AddPolicy("CorsPolicy", 
-// policy =>
-//             {
-//                 policy.WithOrigins("http://localhost:3000/", "http://localhost:3000")
-//                     .AllowAnyOrigin()
-//                     .AllowAnyMethod();
-//             }
-//     );
-// });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsPolicy", 
+policy =>
+            {
+                policy.WithOrigins("http://localhost:3000/", "http://localhost:3000")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+            }
+    );
+});
 
 // Authentication and authorization
 // Attach service that implements the IAuthenticationService
@@ -63,7 +64,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseRouting();
 
-// app.UseCors("CorsPolicy");
+app.UseCors("CorsPolicy");
 
 app.MapSwagger().RequireAuthorization();
 

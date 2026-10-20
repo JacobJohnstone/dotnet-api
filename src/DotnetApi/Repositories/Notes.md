@@ -10,7 +10,7 @@
 operations for example: 
 ```
 // Where the context is injected, and Users is a DbSet:
-var activeUsers = _context.Users.Where(u => u.IsActive)
+var activeUsers = await _context.Users.Where(u => u.IsActive)
     .OrderBy(u => u.LastName)
     .FirstOrDefaultAsync();
 ```
