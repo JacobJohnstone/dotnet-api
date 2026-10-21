@@ -81,7 +81,7 @@ public class AuthService(
     /// </summary>
     /// <param name="user">A CreateUserDto, built from user inputs</param>
     /// <returns>The new user's JWT</returns>
-    public async Task<Result<bool>> Register(CreateUserDto user)
+    public async Task<Result<bool>> Register(RegisterDto user)
     {
         _logger.LogInformation($"Registering user {user.FirstName} {user.LastName}");
         
@@ -94,7 +94,7 @@ public class AuthService(
         }
         
         // hash user password
-        var hasher = new PasswordHasher<CreateUserDto>();
+        var hasher = new PasswordHasher<RegisterDto>();
         var hash = hasher.HashPassword(user, user.Password);
         
         _logger.LogInformation($"Password hashed.");

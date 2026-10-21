@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using DotnetApi.Models.Financials;
 
 /// <summary>
-/// The Budget app DB Context
+///		The Budget app DB Context
 /// </summary>
 public class BudgetContext : DbContext
 {
