@@ -1,4 +1,5 @@
-﻿using DotnetApi.Models.Users;
+﻿using DotnetApi.Models.Common;
+using DotnetApi.Models.Users;
 using DotnetApi.Services.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -55,7 +56,7 @@ public class AuthenticationController(
         catch (Exception ex)
         {
             _logger.LogCritical("Register failed: " + ex.Message);
-            return StatusCode(StatusCodes.Status500InternalServerError, new { error = ex.Message });
+            return StatusCode(StatusCodes.Status500InternalServerError, Result<Exception>.Failure(ex.Message));
         }
     }
 
