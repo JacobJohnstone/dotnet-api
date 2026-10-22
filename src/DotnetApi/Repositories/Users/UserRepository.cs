@@ -1,5 +1,6 @@
 ﻿using DotnetApi.Models.Users;
 using DotnetApi.Repositories.Users;
+using DotnetApi.Contexts;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetApi.Repositories.Users;

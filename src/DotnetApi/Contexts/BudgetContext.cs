@@ -3,6 +3,8 @@ using DotnetApi.Models.Users;
 using Microsoft.EntityFrameworkCore;
 using DotnetApi.Models.Financials;
 
+namespace DotnetApi.Contexts;
+
 /// <summary>
 ///		The Budget app DB Context
 /// </summary>

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DotnetApi.Models.Financials;
+using DotnetApi.Contexts;
 
 [Route("api/[controller]")]
 [ApiController]

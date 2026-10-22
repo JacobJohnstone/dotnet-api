@@ -1,6 +1,8 @@
 using DotnetApi.Repositories.Users;
 using DotnetApi.Services.Authentication;
 using Microsoft.EntityFrameworkCore;
+using DotnetApi.Contexts;
+using DotnetApi.Helpers;
 
 // Used for implementing JWT authentication and authorization in future
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -54,6 +56,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.ApplyMigrations();
 }
 
 // register the middleware pipeline
