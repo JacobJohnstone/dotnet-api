@@ -52,10 +52,10 @@ public class AuthenticationController(
             // TODO: update with a userDto or don't send result in response? (User entity contains password hash)
             return Created($"api/v1/[controller]/register", result);
         }
-        catch
+        catch (Exception ex)
         {
-            _logger.LogCritical("Register failed.");
-            return StatusCode(StatusCodes.Status500InternalServerError);
+            _logger.LogCritical("Register failed: " + ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError, new { error = ex.Message });
         }
     }
 

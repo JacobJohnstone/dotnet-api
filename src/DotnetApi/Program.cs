@@ -53,9 +53,13 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    // Swagger configuration
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
+    
+    // Automatically detect and apply new migrations on startup
+    // (useful for keeping Postgres up to date automatically)
     app.ApplyMigrations();
 }
 
