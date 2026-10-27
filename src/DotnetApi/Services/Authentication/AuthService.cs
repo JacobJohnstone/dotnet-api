@@ -1,4 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 using DotnetApi.Models.Common;
@@ -18,8 +19,11 @@ public class AuthService(
     // Fields //
     private readonly ILogger<AuthService> _logger = logger;
     private readonly IUserRepository _userRepository = userRepository;
+
+    #region IAuthService Implementations
+
+
     
-    // Methods //
 
     /// <summary>
     ///     Main method for logging in a user. Checks the user exists using the
@@ -33,7 +37,7 @@ public class AuthService(
     /// <returns>
     ///     The JWT
     /// </returns>
-    public async Task<Result<bool>> Login(LoginDto credentials)
+    public async Task<Result<string>> Login(LoginDto credentials)
     {
         var email = credentials.email;
         var password = credentials.password;
@@ -48,7 +52,7 @@ public class AuthService(
         if (user == null)
         {
             _logger.LogInformation("User not found (invalid email).");
-            return Result<bool>.Failure("Invalid email or password.");
+            return Result<string>.Failure("Invalid email or password.", HttpStatusCode.BadRequest);
         }
         
         // validate password
@@ -59,10 +63,10 @@ public class AuthService(
         if (!isValidPassword)
         {
             _logger.LogInformation("Invalid password");
-            return Result<bool>.Failure("Invalid email or password.");
+            return Result<string>.Failure("Invalid email or password.", HttpStatusCode.BadRequest);
         }
-        
-        // todo: generate jwt
+
+        var jwt = GenerateJWT(user);
         
         // update last login flag
         user.LastLogin = DateTime.UtcNow;
@@ -76,8 +80,7 @@ public class AuthService(
             // no early return, simply add a silent warning log.
         }
         
-        // todo: return jwt
-        return Result<bool>.Success(true);
+        return Result<string>.Success(jwt, HttpStatusCode.OK);
     }
 
 
@@ -86,7 +89,7 @@ public class AuthService(
     /// </summary>
     /// <param name="user">A CreateUserDto, built from user inputs</param>
     /// <returns>The new user's JWT</returns>
-    public async Task<Result<bool>> Register(RegisterDto user)
+    public async Task<Result<string>> Register(RegisterDto user)
     {
         _logger.LogInformation($"Registering user {user.FirstName} {user.LastName}");
         
@@ -95,7 +98,7 @@ public class AuthService(
         if (isEmailTaken)
         {
             _logger.LogInformation("Email already registered.");
-            return Result<bool>.Failure("An account already exists with this email.");
+            return Result<string>.Failure("An account already exists with this email.", HttpStatusCode.Conflict);
         }
         
         // hash user password
@@ -128,10 +131,26 @@ public class AuthService(
         
         _logger.LogInformation("New user changes saved.");
         
-        // todo: generate jwt and return
-        return Result<bool>.Success(true);
+        var jwt = GenerateJWT(createdUser);
+        
+        return Result<string>.Success(jwt, HttpStatusCode.OK);
+    }
+    
+    public async Task<Result<null>> Logout()
+    {
+        
     }
 
+    public async Task<Result<string>> Refresh(RefreshTokenDto payload)
+    {
+        // check refresh token
+        // ensure valid (not expired)
+    }
+    
+    #endregion
+
+    #region Local Helpers
+    
     /// <summary>
     ///     Responsible for creating the JWT on login/register
     /// </summary>
@@ -190,4 +209,6 @@ public class AuthService(
     {
         
     }
+    
+    #endregion
 }

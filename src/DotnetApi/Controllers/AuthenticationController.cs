@@ -1,4 +1,5 @@
-﻿using DotnetApi.Models.Common;
+﻿using System.Net;
+using DotnetApi.Models.Common;
 using DotnetApi.Models.Users;
 using DotnetApi.Services.Authentication;
 using Microsoft.AspNetCore.Authentication;
@@ -16,13 +17,13 @@ namespace DotnetApi.Controllers;
 public class AuthenticationController(
         IAuthService authService,
         ILogger<AuthenticationController> logger
-    ) : ControllerBase
+    ) : ControllerBase, IAuthenticationController
 {
     // Fields instantiated by primary constructor //
     private readonly ILogger<AuthenticationController> _logger = logger;
     private readonly IAuthService _authenticationService = authService;
 
-    #region AuthenticationRoutes
+    #region Registration
     
     [HttpPost("Register")]
     [Route("api/v1/[controller]/register")]
@@ -56,7 +57,7 @@ public class AuthenticationController(
         catch (Exception ex)
         {
             _logger.LogCritical("Register failed: " + ex.Message);
-            return StatusCode(StatusCodes.Status500InternalServerError, Result<Exception>.Failure(ex.Message));
+            return StatusCode(StatusCodes.Status500InternalServerError, Result<Exception>.Failure(ex.Message, HttpStatusCode.InternalServerError));
         }
     }
 
@@ -82,7 +83,7 @@ public class AuthenticationController(
                 return BadRequest(result);
             }
             
-            return Ok();
+            return Ok(result);
         }
         catch
         {
@@ -91,6 +92,8 @@ public class AuthenticationController(
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
+    
+    #endregion
 
     [HttpPost("logout")]
     [Route("api/v1/[controller]/logout")]
@@ -115,7 +118,21 @@ public class AuthenticationController(
         // return 200 ok if successfully logged out
         return Ok("Logged out successfully");
     }
-    
 
-    #endregion
+    public async Task<IActionResult> Refresh(RefreshTokenDto payload)
+    {
+        try
+        {
+            // handle refresh
+            _logger.LogInformation("Refreshing token...");
+            return Ok();
+        }
+        catch
+        {
+            _logger.LogError("Refresh failed.");
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
+    }
+    
+    
 }

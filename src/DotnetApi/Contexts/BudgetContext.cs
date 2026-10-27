@@ -14,4 +14,5 @@ public class BudgetContext : DbContext
 
 	public DbSet<Transaction> Transactions { get; set; } = null!;
 	public DbSet<User> Users { get; set; } = null!;
+	public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 }
