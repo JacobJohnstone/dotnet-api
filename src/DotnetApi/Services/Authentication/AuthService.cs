@@ -1,13 +1,18 @@
-﻿using DotnetApi.Models.Common;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using DotnetApi.Models.Common;
 using DotnetApi.Models.Users;
 using DotnetApi.Repositories.Users;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 
 namespace DotnetApi.Services.Authentication;
 
 public class AuthService(
     ILogger<AuthService> logger,
-    IUserRepository userRepository
+    IUserRepository userRepository,
+    IConfiguration _configuration
 ) : IAuthService
 {
     // Fields //
@@ -125,5 +130,54 @@ public class AuthService(
         
         // todo: generate jwt and return
         return Result<bool>.Success(true);
+    }
+
+    /// <summary>
+    ///     Responsible for creating the JWT on login/register
+    /// </summary>
+    /// <param name="user"></param>
+    private string GenerateJWT(User user)
+    {
+        // access configuration settings for jwt secret signing key
+        var jwtSettings = _configuration.GetSection("Jwt");
+        var key = Encoding.UTF8.GetBytes(jwtSettings["Secret"]!);
+
+        // Generate claims
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+        };
+        
+        // configure signing credentials
+        var signingCredentials = new SigningCredentials(
+            new SymmetricSecurityKey(key), 
+            SecurityAlgorithms.HmacSha256Signature
+        );
+
+        // configure token
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtSettings["ExpiryInMinutes"])),
+            Issuer = jwtSettings["Issuer"],
+            Audience = jwtSettings["Audience"],
+            SigningCredentials = signingCredentials,
+        };
+        
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+
+        return tokenHandler.WriteToken(token);
+    }
+
+    /// <summary>
+    ///     Will be responsible for clearing/disabling a jwt during logout, deleted user, etc.
+    /// </summary>
+    /// <param name="user"></param>
+    private void ClearJWT(User user)
+    {
+        
     }
 }

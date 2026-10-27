@@ -1,3 +1,4 @@
+using System.Text;
 using DotnetApi.Repositories.Users;
 using DotnetApi.Services.Authentication;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +7,7 @@ using DotnetApi.Helpers;
 
 // Used for implementing JWT authentication and authorization in future
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,7 +38,24 @@ policy =>
 // Responsible for authenticating a user, or responding when an unauthenticated user tries to access a restricted resource
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme,
-        options => builder.Configuration.Bind("JwtSettings", options));
+        options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = builder.Configuration["JwtIssuer"],
+                ValidAudience = builder.Configuration["JwtAudience"],
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    Encoding.UTF8.GetBytes(
+                        builder.Configuration["JwtKey"]
+                        ?? throw new InvalidOperationException("JwtSecret is not configured")
+                    )
+                )
+            };
+        });
 
 builder.Services.AddAuthorization();
 

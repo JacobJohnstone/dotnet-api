@@ -22,7 +22,6 @@ public class BankAccount : ITimestampEntity
     [Range(0, double.MaxValue,  ErrorMessage = "Account number must be non-negative")]
     public int AccountNumber { get; set; }
     
-
     public decimal Balance { get; set; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; set; }
