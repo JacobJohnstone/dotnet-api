@@ -145,9 +145,18 @@ public class AuthService(
         // Generate claims
         var claims = new[]
         {
+            // Standard claims
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new Claim(ClaimTypes.Email, user.Email),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            
+            // additional details
+            new Claim(JwtRegisteredClaimNames.GivenName, user.FirstName),
+            new Claim(JwtRegisteredClaimNames.FamilyName, user.LastName),
+            
+            // Completely custom claims
+            new Claim("onboarding_complete", user.OnboardingCompleted.ToString() ?? "false"),
+            new Claim("tutorial_completed", user.TutorialCompleted.ToString() ?? "false"),
         };
         
         // configure signing credentials
@@ -156,7 +165,7 @@ public class AuthService(
             SecurityAlgorithms.HmacSha256Signature
         );
 
-        // configure token
+        // build the token blueprint
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
@@ -166,6 +175,7 @@ public class AuthService(
             SigningCredentials = signingCredentials,
         };
         
+        // generate/serialize token
         var tokenHandler = new JwtSecurityTokenHandler();
         var token = tokenHandler.CreateToken(tokenDescriptor);
 
