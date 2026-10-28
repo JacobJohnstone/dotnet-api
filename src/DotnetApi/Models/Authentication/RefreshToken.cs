@@ -2,7 +2,9 @@
 
 namespace DotnetApi.Models.Users;
 
-public class RefreshToken
+public class RefreshToken(
+        string tokenHash
+    )
 {
     /// <summary>
     ///     Token primary key
@@ -13,7 +15,7 @@ public class RefreshToken
     ///     The date and time in which the token will expire
     /// </summary>
     public DateTime ExpiresAt { get; init; } = DateTime.UtcNow.AddDays(7);
-    
+
     /// <summary>
     ///     The actual refresh token hash value.
     ///     Keep it hashed, as anyone with the actual token can use it to obtain
@@ -24,7 +26,7 @@ public class RefreshToken
     /// </summary>
     [Required]
     [StringLength(64)]
-    public required string TokenHash { get; init; }
+    public required string TokenHash { get; init; } = tokenHash;
     
     /// <summary>
     ///     A nullable timestamp to indicate when/if a token has been revoked.

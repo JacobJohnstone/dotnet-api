@@ -82,7 +82,17 @@ public class AuthService(
         }
         
         // generate refresh token
-        // build result model (TokenResponseDto)
+        var tokenString = GenerateRefreshToken();
+        var refreshHash = HashRefreshToken(tokenString);
+        
+        // Create token entity
+        var refreshToken = new RefreshToken(refreshHash);
+        
+        // build return value
+        var tokenResponse = new TokenResponseDto
+        {
+            RefreshExpiresAt = 
+        }
         
         return Result<TokenResponseDto>.Success(jwt, HttpStatusCode.OK);
     }
