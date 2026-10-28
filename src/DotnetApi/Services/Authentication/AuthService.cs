@@ -136,7 +136,7 @@ public class AuthService(
         return Result<string>.Success(jwt, HttpStatusCode.OK);
     }
     
-    public async Task<Result<null>> Logout()
+    public async Task Logout()
     {
         
     }
@@ -145,6 +145,8 @@ public class AuthService(
     {
         // check refresh token
         // ensure valid (not expired)
+        // issue new jwt
+        // update/reset refresh token expiration date 
     }
     
     #endregion

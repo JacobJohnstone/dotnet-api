@@ -7,7 +7,7 @@ public interface IAuthService
 {
     public Task<Result<string>> Login(LoginDto credentials);
     public Task<Result<string>> Register(RegisterDto user);
-    public Task<Result<null>> Logout();
+    public Task Logout();
     public Task<Result<string>> Refresh();
 
 }
