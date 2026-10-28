@@ -1,9 +1,11 @@
+using System.Net;
 using System.Text;
 using DotnetApi.Repositories.Users;
 using DotnetApi.Services.Authentication;
 using Microsoft.EntityFrameworkCore;
 using DotnetApi.Contexts;
 using DotnetApi.Helpers;
+using DotnetApi.Models.Common;
 
 // Used for implementing JWT authentication and authorization in future
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -40,6 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme,
         options =>
         {
+            // token validation parameters
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
@@ -54,6 +57,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                         ?? throw new InvalidOperationException("JwtSecret is not configured")
                     )
                 )
+            };
+
+            options.Events = new JwtBearerEvents
+            {
+                OnChallenge = context =>
+                {
+                    // skips default logic for this challenge
+                    context.HandleResponse();
+
+                    // sets the HTTP status code
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    // sets the content type
+                    context.Response.ContentType = "application/json";
+
+                    // sets specified expired token response if that's the exception that occured
+                    var errorCode = context.AuthenticateFailure is SecurityTokenExpiredException
+                        ? "access_token_expired"
+                        : "unauthroized";
+
+                    // formats the api response as a standard result and returns
+                    return context.Response.WriteAsJsonAsync(Result<string>.Failure(errorCode, HttpStatusCode.Unauthorized));
+                }
             };
         });
 

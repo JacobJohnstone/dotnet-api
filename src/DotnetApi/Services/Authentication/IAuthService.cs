@@ -9,5 +9,8 @@ public interface IAuthService
     public Task<Result<string>> Register(RegisterDto user);
     public Task Logout();
     public Task<Result<string>> Refresh();
+    
+    // Revoke ALL refresh tokens
+    // public Task LogoutOfAllDevices(User user)
 
 }
