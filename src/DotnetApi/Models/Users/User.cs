@@ -53,10 +53,6 @@ namespace DotnetApi.Models.Users
         
         public bool IsActive { get; set; } = true;
         
-        // Authorization
-        public string? RefreshToken { get; set; } = null;
-        public DateTime? RefreshTokenExpiry { get; set; } = null;
-        
         // Timestamps
         public DateTime? LastLogin { get; set; }
         public DateTime CreatedAt { get; init; } = DateTime.Now;

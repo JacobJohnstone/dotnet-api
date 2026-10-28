@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using DotnetApi.Models.Common;
 using DotnetApi.Models.Users;
@@ -37,7 +38,7 @@ public class AuthService(
     /// <returns>
     ///     The JWT
     /// </returns>
-    public async Task<Result<string>> Login(LoginDto credentials)
+    public async Task<Result<TokenResponseDto>> Login(LoginDto credentials)
     {
         var email = credentials.email;
         var password = credentials.password;
@@ -52,7 +53,7 @@ public class AuthService(
         if (user == null)
         {
             _logger.LogInformation("User not found (invalid email).");
-            return Result<string>.Failure("Invalid email or password.", HttpStatusCode.BadRequest);
+            return Result<TokenResponseDto>.Failure("Invalid email or password.", HttpStatusCode.BadRequest);
         }
         
         // validate password
@@ -63,7 +64,7 @@ public class AuthService(
         if (!isValidPassword)
         {
             _logger.LogInformation("Invalid password");
-            return Result<string>.Failure("Invalid email or password.", HttpStatusCode.BadRequest);
+            return Result<TokenResponseDto>.Failure("Invalid email or password.", HttpStatusCode.BadRequest);
         }
 
         var jwt = GenerateJWT(user);
@@ -80,7 +81,10 @@ public class AuthService(
             // no early return, simply add a silent warning log.
         }
         
-        return Result<string>.Success(jwt, HttpStatusCode.OK);
+        // generate refresh token
+        // build result model (TokenResponseDto)
+        
+        return Result<TokenResponseDto>.Success(jwt, HttpStatusCode.OK);
     }
 
 
@@ -89,7 +93,7 @@ public class AuthService(
     /// </summary>
     /// <param name="user">A CreateUserDto, built from user inputs</param>
     /// <returns>The new user's JWT</returns>
-    public async Task<Result<string>> Register(RegisterDto user)
+    public async Task<Result<TokenResponseDto>> Register(RegisterDto user)
     {
         _logger.LogInformation($"Registering user {user.FirstName} {user.LastName}");
         
@@ -98,7 +102,7 @@ public class AuthService(
         if (isEmailTaken)
         {
             _logger.LogInformation("Email already registered.");
-            return Result<string>.Failure("An account already exists with this email.", HttpStatusCode.Conflict);
+            return Result<TokenResponseDto>.Failure("An account already exists with this email.", HttpStatusCode.Conflict);
         }
         
         // hash user password
@@ -131,17 +135,42 @@ public class AuthService(
         
         _logger.LogInformation("New user changes saved.");
         
+        // generate new jwt
         var jwt = GenerateJWT(createdUser);
         
-        return Result<string>.Success(jwt, HttpStatusCode.OK);
+        // generate new refresh token
+        var refresh = GenerateRefreshToken();
+        var refreshHash = HashRefreshToken(refresh);
+        
+        // Create new refresh entity token to store
+        var refreshToken = new RefreshToken
+        {
+            TokenHash = refreshHash,
+            Id = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow,
+        };
+        
+        // build return type
+        var data = new TokenResponseDto
+        {
+            AccessToken = jwt,
+            RefreshToken = refresh,
+            RefreshExpiresAt = refreshToken.ExpiresAt,
+        };
+        
+        // committ changes to refresh token DbSet
+        
+        return Result<TokenResponseDto>.Success(data, HttpStatusCode.OK);
     }
     
     public async Task Logout()
     {
-        
+        // revoke refresh token
+        _logger.LogInformation("Logged out.");
+
     }
 
-    public async Task<Result<string>> Refresh(RefreshTokenDto payload)
+    public async Task<Result<TokenResponseDto>> Refresh(RefreshTokenDto payload)
     {
         // check refresh token
         // ensure valid (not expired)
@@ -203,13 +232,27 @@ public class AuthService(
         return tokenHandler.WriteToken(token);
     }
 
-    /// <summary>
-    ///     Will be responsible for clearing/disabling a jwt during logout, deleted user, etc.
-    /// </summary>
-    /// <param name="user"></param>
-    private void ClearJWT(User user)
+    private string GenerateRefreshToken()
     {
+        // generate token
+        var randomBytes = new byte[64];
+        using (var rng = RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(randomBytes);
+        }
         
+        string plainTextToken = Convert.ToBase64String(randomBytes);
+        return plainTextToken;
+    }
+
+    private string HashRefreshToken(string refreshToken)
+    {
+        // compute SHA256 hash of refresh token
+        byte[] inputBytes = Encoding.UTF8.GetBytes(refreshToken);
+        byte[] hashBytes = SHA256.HashData(inputBytes);
+        
+        // convert to clean hexadecimal string
+        return Convert.ToHexString(hashBytes).ToLowerInvariant();
     }
     
     #endregion

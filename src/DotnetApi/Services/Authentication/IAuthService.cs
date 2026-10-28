@@ -5,10 +5,10 @@ namespace DotnetApi.Services.Authentication;
 
 public interface IAuthService
 {
-    public Task<Result<string>> Login(LoginDto credentials);
-    public Task<Result<string>> Register(RegisterDto user);
+    public Task<Result<TokenResponseDto>> Login(LoginDto credentials);
+    public Task<Result<TokenResponseDto>> Register(RegisterDto user);
     public Task Logout();
-    public Task<Result<string>> Refresh();
+    public Task<Result<TokenResponseDto>> Refresh();
     
     // Revoke ALL refresh tokens
     // public Task LogoutOfAllDevices(User user)
