@@ -205,15 +205,27 @@ public class AuthService(
         // issue a new refresh token
         var newRefreshToken = GenerateRefreshToken();
         var newRefreshHash = HashRefreshToken(newRefreshToken);
-        var newToken = new RefreshToken(newRefreshHash);
 
-        // Add new refresh token to db
-        await _refreshTokenRepository.AddRefreshTokenAsync(newToken);
+        // handles new refresh token added to db and previous token validation/updates
+        var generatedToken = await _refreshTokenRepository.TryRotateRefreshTokenAsync(token.Id, newRefreshHash);
 
-        // _refreshTokenRepository.SaveChangesAsync();
-        
-        
-        await _refreshTokenRepository.UpdateTokenReplacedByTokenHashAsync()
+        if (generatedToken == null)
+        {
+            _logger.LogError("Failed to rotate refresh token");
+            return  Result<TokenResponseDto>.Failure("Failed to rotate refresh token", HttpStatusCode.Conflict);
+        }
+        else
+        {
+            _logger.LogInformation("Refresh token rotated");
+            var tokenResp = new TokenResponseDto
+            {
+                AccessToken = jwt,
+                RefreshToken = newRefreshToken,
+                RefreshExpiresAt = generatedToken.ExpiresAt,
+
+            };
+            return Result<TokenResponseDto>.Success(tokenResp, HttpStatusCode.OK);
+        }
         
     }
     

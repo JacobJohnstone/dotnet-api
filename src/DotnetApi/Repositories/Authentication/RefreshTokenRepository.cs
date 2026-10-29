@@ -74,7 +74,7 @@ public class RefreshTokenRepository(
     }
 
     /// <inheritdoc/>
-    public async Task<bool> TryRotateRefreshTokenAsync(
+    public async Task<RefreshToken?> TryRotateRefreshTokenAsync(
         Guid previousTokenId, 
         string replacementTokenHash
     )
@@ -113,7 +113,7 @@ public class RefreshTokenRepository(
         {
             // no changes to roll back, but explicitly ends the transaction
             await transaction.RollbackAsync();
-            return false;
+            return null;
         }
         
         // Create new token
@@ -129,8 +129,7 @@ public class RefreshTokenRepository(
         await transaction.CommitAsync();
         
         // return a bool indicating the row being updated
-        return true;
-        
+        return newRefreshToken;
     }
 
     /// <inheritdoc/>
