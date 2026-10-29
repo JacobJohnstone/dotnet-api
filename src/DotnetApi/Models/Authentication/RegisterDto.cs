@@ -20,6 +20,4 @@ public class RegisterDto
     public string Password { get; set; }
     
     public string? ProfilePictureUrl { get; set; } = null;
-
-    public bool IsActive { get; set; } = true;
 }

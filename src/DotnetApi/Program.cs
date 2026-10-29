@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using DotnetApi.Contexts;
 using DotnetApi.Helpers;
 using DotnetApi.Models.Common;
+using DotnetApi.Repositories.Authentication;
 
 // Used for implementing JWT authentication and authorization in future
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -90,6 +91,7 @@ builder.Services.AddDbContext<BudgetContext>(opt =>
 
 // Register the authentication service
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();

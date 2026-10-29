@@ -5,6 +5,8 @@ using System.Security.Cryptography;
 using System.Text;
 using DotnetApi.Models.Common;
 using DotnetApi.Models.Users;
+using DotnetApi.Models.Authentication;
+using DotnetApi.Repositories.Authentication;
 using DotnetApi.Repositories.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -14,12 +16,14 @@ namespace DotnetApi.Services.Authentication;
 public class AuthService(
     ILogger<AuthService> logger,
     IUserRepository userRepository,
-    IConfiguration _configuration
+    IConfiguration _configuration,
+    IRefreshTokenRepository refreshTokenRepository
 ) : IAuthService
 {
     // Fields //
     private readonly ILogger<AuthService> _logger = logger;
     private readonly IUserRepository _userRepository = userRepository;
+    private readonly IRefreshTokenRepository _refreshTokenRepository = refreshTokenRepository;
 
     #region IAuthService Implementations
 
@@ -91,10 +95,12 @@ public class AuthService(
         // build return value
         var tokenResponse = new TokenResponseDto
         {
-            RefreshExpiresAt = 
-        }
+            RefreshToken = tokenString,
+            AccessToken = jwt,
+            RefreshExpiresAt = refreshToken.ExpiresAt,
+        };
         
-        return Result<TokenResponseDto>.Success(jwt, HttpStatusCode.OK);
+        return Result<TokenResponseDto>.Success(tokenResponse, HttpStatusCode.OK);
     }
 
 
@@ -153,12 +159,7 @@ public class AuthService(
         var refreshHash = HashRefreshToken(refresh);
         
         // Create new refresh entity token to store
-        var refreshToken = new RefreshToken
-        {
-            TokenHash = refreshHash,
-            Id = Guid.NewGuid(),
-            CreatedAt = DateTime.UtcNow,
-        };
+        var refreshToken = new RefreshToken(refreshHash);
         
         // build return type
         var data = new TokenResponseDto
@@ -180,12 +181,40 @@ public class AuthService(
 
     }
 
-    public async Task<Result<TokenResponseDto>> Refresh(RefreshTokenDto payload)
+    public async Task<Result<TokenResponseDto>> Refresh(string refreshToken, User user)
     {
-        // check refresh token
+        _logger.LogInformation("Refreshing token...");
+        
+        // fetch the existing token
+        var tokenHash = HashRefreshToken(refreshToken);
+        var token = await _refreshTokenRepository.GetTokenByHashAsync(tokenHash);
+
+        _logger.LogInformation("Refresh token found.");
+        
         // ensure valid (not expired)
+        if (token.ExpiresAt <= DateTime.UtcNow)
+        {
+            _logger.LogInformation("Refresh token expired at {ExpiresAt}", token.ExpiresAt);
+            return Result<TokenResponseDto>.Failure("Token is expired", HttpStatusCode.Unauthorized);
+        }
+        
         // issue new jwt
-        // update/reset refresh token expiration date 
+        _logger.LogInformation("Refresh token valid, generating new jwt.");
+        var jwt = GenerateJWT(user);
+        
+        // issue a new refresh token
+        var newRefreshToken = GenerateRefreshToken();
+        var newRefreshHash = HashRefreshToken(newRefreshToken);
+        var newToken = new RefreshToken(newRefreshHash);
+
+        // Add new refresh token to db
+        await _refreshTokenRepository.AddRefreshTokenAsync(newToken);
+
+        // _refreshTokenRepository.SaveChangesAsync();
+        
+        
+        await _refreshTokenRepository.UpdateTokenReplacedByTokenHashAsync()
+        
     }
     
     #endregion

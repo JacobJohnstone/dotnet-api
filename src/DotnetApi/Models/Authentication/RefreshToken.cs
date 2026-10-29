@@ -1,15 +1,17 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
-namespace DotnetApi.Models.Users;
+namespace DotnetApi.Models.Authentication;
 
-public class RefreshToken(
-        string tokenHash
-    )
+[Table("RefreshTokens")]
+[PrimaryKey("Id")]
+public class RefreshToken(string tokenHash)
 {
     /// <summary>
     ///     Token primary key
     /// </summary>
-    public Guid Id { get; init; }
+    public Guid Id { get; init; } = Guid.NewGuid();
     
     /// <summary>
     ///     The date and time in which the token will expire
@@ -24,9 +26,10 @@ public class RefreshToken(
     ///     Encrypted with sha-256 instead of bcrypt (password hasher), as
     ///     password hashers are intended for a different problem
     /// </summary>
-    [Required]
     [StringLength(64)]
-    public required string TokenHash { get; init; } = tokenHash;
+    public string TokenHash { get; init; } = tokenHash;
+    
+    public Guid UserId { get; set; }
     
     /// <summary>
     ///     A nullable timestamp to indicate when/if a token has been revoked.
@@ -37,7 +40,7 @@ public class RefreshToken(
     /// <summary>
     ///     The time this refresh token was issued
     /// </summary>
-    public DateTime CreatedAt { get; init; } = DateTime.Now;
+    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 
     /// <summary>
     ///     The hash value of the token which replaced this one during refresh token rotation/updating
