@@ -33,7 +33,7 @@ public interface IRefreshTokenRepository
     /// <param name="previousTokenId">guid of expired/previous token</param>
     /// <param name="refreshTokenHash">hash of newly generated token</param>
     /// <returns>Refresh token after updates</returns>
-    public Task<RefreshToken> UpdateTokenReplacedByAsync(Guid previousTokenId, string refreshTokenHash);
+    public Task UpdateTokenReplacedByAsync(Guid previousTokenId, string refreshTokenHash);
     
     /// <summary>
     ///     When creating a new refresh token, adds it to the DbSet

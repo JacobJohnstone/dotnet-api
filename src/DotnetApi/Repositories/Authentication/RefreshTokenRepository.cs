@@ -74,25 +74,37 @@ public class RefreshTokenRepository(
     }
 
     /// <inheritdoc/>
-    public async Task<RefreshToken> UpdateTokenReplacedByAsync(Guid previousTokenId, string refreshTokenHash)
+    public async Task UpdateTokenReplacedByAsync(Guid previousTokenId, string refreshTokenHash)
     {
         _logger.LogInformation("Updating `replacedByTokenHash` field on refrehs token {hash}", refreshTokenHash);
         
-        // Find related token
-        var refreshToken = await GetTokenByIdAsync(previousTokenId);
-        if (refreshToken == null)
+        // Find related token, ensure it's not revoked etc., and update
+        try
         {
-            _logger.LogError("Failed to update field, previous token not found for ID {previousId}.", previousTokenId);
-            throw new KeyNotFoundException("Failed to update field, previous token not found.");
+            // Inplace update as opposed to fetching, updating, and calling `await SaveChangesAsync()`
+            // Required to prevent concurrent requests simultaneously updating the same row (possible during
+            // the fetch, update, save scenario)
+            
+            // By checking if the replacement token hash field is still null, we know at this exact moment, the row has not
+            // been updated by another request yet
+            
+            // The issue with the previous implementation was that the validation and modifications were handled separately
+            var updatedToken = await _context.RefreshTokens
+                .Where(rt => rt.Id == previousTokenId &&        // the refresh token in question
+                             rt.ReplacedByTokenHash == null &&  // no other request has updated/replaced the token yet
+                             rt.ExpiresAt >= DateTime.UtcNow && // token has not expired, therefore can be re-issued
+                             rt.RevokedAt == null               // the token has not been revoked, therefore it can be re-issued
+                )
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(token => token.ReplacedByTokenHash, refreshTokenHash)
+                );
         }
-
-        // Update token
-        refreshToken.ReplacedByTokenHash = refreshTokenHash;
-        
-        // Save changes and return
-        await SaveChangesAsync();
-
-        return refreshToken;
+        catch (Exception ex)
+        {
+            // if update fails, log and throw exception
+            _logger.LogError("Failed to update refresh token `ReplacedBy` field: {message}", ex.Message);
+            throw new Exception(ex.Message);
+        }
     }
 
     /// <inheritdoc/>

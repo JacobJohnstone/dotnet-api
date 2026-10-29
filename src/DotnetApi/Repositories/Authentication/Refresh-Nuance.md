@@ -11,6 +11,7 @@
   - ExecuteUpdateAsync instead of fetching, modifying, and saving changes
 - Fault Tolerance and Distributed Systems
   - Handling failures between database commits and HTTP responses
+- Preventing previous TOCTOU race condition bug
 
 ---
 
