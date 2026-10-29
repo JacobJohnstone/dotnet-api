@@ -28,12 +28,12 @@ public interface IRefreshTokenRepository
     public Task<List<RefreshToken>> GetTokensByUserIdAsync(Guid userId, bool? active = true);
     
     /// <summary>
-    ///     Sets the hash value of the `ReplacedByTokenHash` field, providing a token refresh replacement history.
+    ///     Safely, using a local transaction, updates the replacedTokenHash and revokedAt fields
     /// </summary>
     /// <param name="previousTokenId">guid of expired/previous token</param>
-    /// <param name="refreshTokenHash">hash of newly generated token</param>
+    /// <param name="replacementTokenHash">hash of newly generated token</param>
     /// <returns>Refresh token after updates</returns>
-    public Task UpdateTokenReplacedByAsync(Guid previousTokenId, string refreshTokenHash);
+    public Task<bool> TryRotateRefreshTokenAsync(Guid previousTokenId, string replacementTokenHash);
     
     /// <summary>
     ///     When creating a new refresh token, adds it to the DbSet
