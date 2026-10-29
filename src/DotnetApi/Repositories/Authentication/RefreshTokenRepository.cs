@@ -74,37 +74,63 @@ public class RefreshTokenRepository(
     }
 
     /// <inheritdoc/>
-    public async Task UpdateTokenReplacedByAsync(Guid previousTokenId, string refreshTokenHash)
+    public async Task<bool> TryRotateRefreshTokenAsync(
+        Guid previousTokenId, 
+        string replacementTokenHash
+    )
     {
-        _logger.LogInformation("Updating `replacedByTokenHash` field on refrehs token {hash}", refreshTokenHash);
+        _logger.LogInformation("Updating `replacedByTokenHash` field on refrehs token {hash}", replacementTokenHash);
         
-        // Find related token, ensure it's not revoked etc., and update
-        try
+        // start a transaction for tracking all changes
+        // by declaring with `await using var`, the transaction is scoped to this block (this method) and is
+        // automatically disposed when code execution leaves this scope.
+        // without `using`, disposal would need to be manually managed
+        await using var transaction = await _context.Database.BeginTransactionAsync();
+        var now = DateTime.UtcNow;
+        
+        // Inplace update as opposed to fetching, updating, and calling `await SaveChangesAsync()`
+        // Required to prevent concurrent requests simultaneously updating the same row (possible during
+        // the fetch, update, save scenario)
+        
+        // By checking if the replacement token hash field is still null, we know at this exact moment, the row has not
+        // been updated by another request yet
+        
+        // The issue with the previous implementation was that the validation and modifications were handled separately
+        var rowsUpdatedCount = await _context.RefreshTokens
+            .Where(rt => rt.Id == previousTokenId &&        // the refresh token in question
+                         rt.ReplacedByTokenHash == null &&  // no other request has updated/replaced the token yet
+                         rt.ExpiresAt >= now &&             // token has not expired, therefore can be re-issued
+                         rt.RevokedAt == null               // the token has not been revoked, therefore it can be re-issued
+            )
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(token => token.ReplacedByTokenHash, replacementTokenHash)
+                .SetProperty(token => token.RevokedAt, now)
+            );
+
+        // if the row was not updated, we know another request has already updated this row and we can
+        // rollback/return false
+        if (rowsUpdatedCount != 1)
         {
-            // Inplace update as opposed to fetching, updating, and calling `await SaveChangesAsync()`
-            // Required to prevent concurrent requests simultaneously updating the same row (possible during
-            // the fetch, update, save scenario)
-            
-            // By checking if the replacement token hash field is still null, we know at this exact moment, the row has not
-            // been updated by another request yet
-            
-            // The issue with the previous implementation was that the validation and modifications were handled separately
-            var updatedToken = await _context.RefreshTokens
-                .Where(rt => rt.Id == previousTokenId &&        // the refresh token in question
-                             rt.ReplacedByTokenHash == null &&  // no other request has updated/replaced the token yet
-                             rt.ExpiresAt >= DateTime.UtcNow && // token has not expired, therefore can be re-issued
-                             rt.RevokedAt == null               // the token has not been revoked, therefore it can be re-issued
-                )
-                .ExecuteUpdateAsync(setters => setters
-                    .SetProperty(token => token.ReplacedByTokenHash, refreshTokenHash)
-                );
+            // no changes to roll back, but explicitly ends the transaction
+            await transaction.RollbackAsync();
+            return false;
         }
-        catch (Exception ex)
-        {
-            // if update fails, log and throw exception
-            _logger.LogError("Failed to update refresh token `ReplacedBy` field: {message}", ex.Message);
-            throw new Exception(ex.Message);
-        }
+        
+        // Create new token
+        var newRefreshToken = new RefreshToken(replacementTokenHash);
+        
+        // add new refresh token to the db
+        _context.RefreshTokens.Add(newRefreshToken);
+        
+        // commit the addition of the new token
+        await _context.SaveChangesAsync();
+        
+        // commit all database changes
+        await transaction.CommitAsync();
+        
+        // return a bool indicating the row being updated
+        return true;
+        
     }
 
     /// <inheritdoc/>
