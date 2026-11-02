@@ -24,8 +24,13 @@ public interface IRefreshTokenRepository
     ///     non expired, non revoked refresh tokens
     /// </summary>
     /// <param name="userId">The ID of the user being queried on</param>
+    /// <param name="onlyActive">
+    ///     If false, the method will return all expired, revoked, etc.
+    ///     tokens as well as all currently valid/active tokens.
+    ///     If true, the method will only return currently valid/active tokens
+    /// </param>
     /// <returns>A list of refresh tokens</returns>
-    public Task<List<RefreshToken>> GetTokensByUserIdAsync(Guid userId, bool? active = true);
+    public Task<List<RefreshToken>> GetTokensByUserIdAsync(Guid userId, bool? onlyActive = true);
     
     /// <summary>
     ///     Safely, using a local transaction, updates the replacedTokenHash and revokedAt fields
@@ -40,15 +45,15 @@ public interface IRefreshTokenRepository
     /// </summary>
     /// <param name="refreshToken"></param>
     /// <returns></returns>
-    public Task AddRefreshTokenAsync(RefreshToken refreshToken);
+    // public Task AddRefreshTokenAsync(RefreshToken refreshToken);
 
     /// <summary>
     ///     Revokes a single refresh token, specifying the selected token by id.
     ///     Sets the revocation date to DateTime.UtcNow
     /// </summary>
-    /// <param name="id">guid primary key of refresh token</param>
+    /// <param name="tokenHash">token hash of refresh token</param>
     /// <returns></returns>
-    public Task RevokeRefreshTokenByIdAsync(Guid id);
+    public Task RevokeRefreshTokenByHashAsync(string tokenHash);
 
     /// <summary>
     ///     Revokes all refresh tokens assigned to a specific user.

@@ -27,21 +27,7 @@ public class AuthService(
 
     #region IAuthService Implementations
 
-
-    
-
-    /// <summary>
-    ///     Main method for logging in a user. Checks the user exists using the
-    ///     userRepository, that the credentials match, and in the future, that
-    ///     they are not inactive/banned/locked, before returning a successful
-    ///     login. 
-    /// </summary>
-    /// <param name="credentials">
-    ///     The user's email and password, wrapped as a single loginDto
-    /// </param>
-    /// <returns>
-    ///     The JWT
-    /// </returns>
+    /// <inheritdoc/>
     public async Task<Result<TokenResponseDto>> Login(LoginDto credentials)
     {
         var email = credentials.email;
@@ -71,7 +57,7 @@ public class AuthService(
             return Result<TokenResponseDto>.Failure("Invalid email or password.", HttpStatusCode.BadRequest);
         }
 
-        var jwt = GenerateJWT(user);
+        var jwt = GenerateJwt(user);
         
         // update last login flag
         user.LastLogin = DateTime.UtcNow;
@@ -102,13 +88,8 @@ public class AuthService(
         
         return Result<TokenResponseDto>.Success(tokenResponse, HttpStatusCode.OK);
     }
-
-
-    /// <summary>
-    ///     Creates a new user, handling sign-ups.
-    /// </summary>
-    /// <param name="user">A CreateUserDto, built from user inputs</param>
-    /// <returns>The new user's JWT</returns>
+    
+    /// <inheritdoc/>
     public async Task<Result<TokenResponseDto>> Register(RegisterDto user)
     {
         _logger.LogInformation($"Registering user {user.FirstName} {user.LastName}");
@@ -152,7 +133,7 @@ public class AuthService(
         _logger.LogInformation("New user changes saved.");
         
         // generate new jwt
-        var jwt = GenerateJWT(createdUser);
+        var jwt = GenerateJwt(createdUser);
         
         // generate new refresh token
         var refresh = GenerateRefreshToken();
@@ -174,13 +155,31 @@ public class AuthService(
         return Result<TokenResponseDto>.Success(data, HttpStatusCode.OK);
     }
     
-    public async Task Logout()
+    /// <inheritdoc/>
+    public async Task Logout(string refreshToken)
     {
+        
+        _logger.LogInformation("Logging out.");
+        
         // revoke refresh token
-        _logger.LogInformation("Logged out.");
-
+        var tokenHash = HashRefreshToken(refreshToken);
+        await _refreshTokenRepository.RevokeRefreshTokenByHashAsync(tokenHash);
+        
+        // jwt is cleared from client, but technically still valid until it's expired (5 minutes of validity, but the client no longer uses it)
     }
 
+    /// <inheritdoc/>
+    public async Task LogoutOfAllDevices(Guid userId)
+    {
+        _logger.LogInformation("Logging out user {uid}.", userId);
+        
+        // revoke refresh token
+        await _refreshTokenRepository.RevokeTokensByUserIdAsync(userId);
+        
+        // jwt is cleared from client, but technically still valid until it's expired (5 minutes of validity, but the client no longer uses it)
+    }
+
+    /// <inheritdoc/>
     public async Task<Result<TokenResponseDto>> Refresh(string refreshToken, User user)
     {
         _logger.LogInformation("Refreshing token...");
@@ -189,7 +188,14 @@ public class AuthService(
         var tokenHash = HashRefreshToken(refreshToken);
         var token = await _refreshTokenRepository.GetTokenByHashAsync(tokenHash);
 
-        _logger.LogInformation("Refresh token found.");
+        // ensure we found a valid token or return a 401 unauthorized
+        if (token == null)
+        {
+            _logger.LogWarning("Failed to find refresh token");
+            return Result<TokenResponseDto>.Failure("Invalid refresh token", HttpStatusCode.Unauthorized);
+        }
+        
+        _logger.LogInformation("Refresh token found");
         
         // ensure valid (not expired)
         if (token.ExpiresAt <= DateTime.UtcNow)
@@ -199,14 +205,17 @@ public class AuthService(
         }
         
         // issue new jwt
-        _logger.LogInformation("Refresh token valid, generating new jwt.");
-        var jwt = GenerateJWT(user);
+        _logger.LogInformation("Refresh token valid -- generating new jwt");
+        var jwt = GenerateJwt(user);
         
         // issue a new refresh token
         var newRefreshToken = GenerateRefreshToken();
         var newRefreshHash = HashRefreshToken(newRefreshToken);
 
+        _logger.LogInformation("Created refresh jwt and refresh hash, attempting refresh token rotation...");
+        
         // handles new refresh token added to db and previous token validation/updates
+        // returns the full RefreshToken entity with `expiredAt`
         var generatedToken = await _refreshTokenRepository.TryRotateRefreshTokenAsync(token.Id, newRefreshHash);
 
         if (generatedToken == null)
@@ -214,19 +223,17 @@ public class AuthService(
             _logger.LogError("Failed to rotate refresh token");
             return  Result<TokenResponseDto>.Failure("Failed to rotate refresh token", HttpStatusCode.Conflict);
         }
-        else
-        {
-            _logger.LogInformation("Refresh token rotated");
-            var tokenResp = new TokenResponseDto
-            {
-                AccessToken = jwt,
-                RefreshToken = newRefreshToken,
-                RefreshExpiresAt = generatedToken.ExpiresAt,
-
-            };
-            return Result<TokenResponseDto>.Success(tokenResp, HttpStatusCode.OK);
-        }
         
+        // Return new refresh token to client
+        _logger.LogInformation("Refresh token rotated successfully");
+        var tokenResp = new TokenResponseDto
+        {
+            AccessToken = jwt,
+            RefreshToken = newRefreshToken,
+            RefreshExpiresAt = generatedToken.ExpiresAt,
+
+        };
+        return Result<TokenResponseDto>.Success(tokenResp, HttpStatusCode.OK);
     }
     
     #endregion
@@ -237,7 +244,7 @@ public class AuthService(
     ///     Responsible for creating the JWT on login/register
     /// </summary>
     /// <param name="user"></param>
-    private string GenerateJWT(User user)
+    private string GenerateJwt(User user)
     {
         // access configuration settings for jwt secret signing key
         var jwtSettings = _configuration.GetSection("Jwt");

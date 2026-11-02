@@ -40,15 +40,15 @@ public class RefreshTokenRepository(
     }
     
     /// <inheritdoc/>
-    public async Task<List<RefreshToken>> GetTokensByUserIdAsync(Guid userId, bool? active = true)
+    public async Task<List<RefreshToken>> GetTokensByUserIdAsync(Guid userId, bool? onlyActive = true)
     {
         _logger.LogInformation("Getting user tokens");
         
         // query all tokens related to a specific user
-        List<RefreshToken> userTokens = [];
+        List<RefreshToken> userTokens;
 
         // If inactive, don't consider additional query params, else, query only relevant tokens
-        if (!active.Value)
+        if (!onlyActive.HasValue || !onlyActive.Value)
         {
             _logger.LogInformation("Querying all refresh tokens for a user unconditionally");
             // Return all refresh tokens related to user id
@@ -68,7 +68,7 @@ public class RefreshTokenRepository(
                 .ToListAsync();
         }
         
-        _logger.LogInformation("Fetched tokens: {userTokens}", userTokens);
+        _logger.LogInformation("Fetched tokens: {UserTokens}", userTokens.ToString());
         
         return userTokens;
     }
@@ -130,6 +130,40 @@ public class RefreshTokenRepository(
         
         // return a bool indicating the row being updated
         return newRefreshToken;
+    }
+
+    /// <inheritdoc/>
+    public async Task RevokeRefreshTokenByHashAsync(string tokenHash)
+    {
+        _logger.LogInformation("Revoking token by hash {hash}", tokenHash);
+        
+        // update the token revoked status where hash == token.hash
+        var rowsUpdatedCount = await _context.RefreshTokens
+            .Where(t => t.TokenHash == tokenHash)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(token => token.RevokedAt, DateTime.UtcNow)
+            );
+        
+        _logger.LogInformation("Token revoked");
+    }
+
+    /// <inheritdoc/>
+    public async Task RevokeTokensByUserIdAsync(Guid userId)
+    {
+        _logger.LogInformation("Revoking all tokens for user {uid}", userId);
+        
+        // revoke all tokens that are not yet expired, not yet revoked, and belong to the userId
+        var rowsUpdatedCount = await _context.RefreshTokens
+            .Where(rt => rt.UserId == userId &&
+                         rt.RevokedAt == null &&
+                         rt.ExpiresAt >= DateTime.UtcNow
+            )
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(token => token.RevokedAt, DateTime.UtcNow)
+            );
+        
+        // all devices are signed out
+        _logger.LogInformation("All user tokens revoked");
     }
 
     /// <inheritdoc/>

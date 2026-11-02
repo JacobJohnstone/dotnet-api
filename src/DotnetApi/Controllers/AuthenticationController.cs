@@ -119,7 +119,7 @@ public class AuthenticationController(
         return Ok("Logged out successfully");
     }
 
-    public async Task<IActionResult> Refresh(RefreshTokenDto payload)
+    public async Task<IActionResult> Refresh(string refreshToken)
     {
         try
         {
