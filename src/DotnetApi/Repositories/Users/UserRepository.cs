@@ -8,13 +8,15 @@ namespace DotnetApi.Repositories.Users;
 
 public class UserRepository(
     BudgetContext dbContext, 
-    ILogger<UserRepository> logger
+    ILogger<UserRepository> logger,
+    HttpContext httpContext
     ) : IUserRepository
 {
     // Fields (populated by primary constructor) //
     
     private readonly BudgetContext _context = dbContext;
     private readonly ILogger<UserRepository> _logger = logger;
+    private readonly HttpContext _httpContext = httpContext;
     
     // Methods //
     
@@ -29,7 +31,7 @@ public class UserRepository(
 
     public async Task<User?> GetCurrentUser()
     {
-        var user = HttpContext.Items["CurrentUser"] as User;
+        var user = _httpContext.Items["CurrentUser"] as User;
         return user;
     }
     
