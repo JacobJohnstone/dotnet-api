@@ -1,6 +1,7 @@
 ﻿using DotnetApi.Models.Users;
 using DotnetApi.Repositories.Users;
 using DotnetApi.Contexts;
+using DotnetApi.Models.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetApi.Repositories.Users;
@@ -24,6 +25,12 @@ public class UserRepository(
     {
         _logger.LogInformation($"Saving changes to {_context.Users.Count()} users");
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<User?> GetCurrentUser()
+    {
+        var user = HttpContext.Items["CurrentUser"] as User;
+        return user;
     }
     
     /// <summary>

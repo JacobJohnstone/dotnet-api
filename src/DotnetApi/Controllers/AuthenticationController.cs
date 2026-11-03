@@ -1,6 +1,8 @@
 ﻿using System.Net;
+using System.Security.Authentication;
 using DotnetApi.Models.Common;
 using DotnetApi.Models.Users;
+using DotnetApi.Repositories.Users;
 using DotnetApi.Services.Authentication;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -14,6 +16,7 @@ namespace DotnetApi.Controllers;
 ///     services, and returning a response.
 /// </summary>
 public class AuthenticationController(
+        IUserRepository userRepository,
         IAuthService authService,
         ILogger<AuthenticationController> logger
     ) : ControllerBase, IAuthenticationController
@@ -21,6 +24,7 @@ public class AuthenticationController(
     // Fields instantiated by primary constructor //
     private readonly ILogger<AuthenticationController> _logger = logger;
     private readonly IAuthService _authenticationService = authService;
+    private readonly IUserRepository _userRepository = userRepository;
 
     #region Registration
     
@@ -121,9 +125,16 @@ public class AuthenticationController(
     {
         try
         {
+            var user = await _userRepository.GetCurrentUser();
+
+            if (user == null)
+            {
+                throw new AuthenticationException("User not found");
+            }
+            
             // handle refresh
             _logger.LogInformation("Refreshing token...");
-            var result = await _authenticationService.Refresh(refreshToken);
+            var result = await _authenticationService.Refresh(refreshToken, user);
             
             return Ok();
         }

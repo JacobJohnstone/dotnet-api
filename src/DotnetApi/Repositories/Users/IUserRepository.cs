@@ -9,6 +9,7 @@ namespace DotnetApi.Repositories.Users;
 /// </summary>
 public interface IUserRepository
 {
+    Task<User?> GetCurrentUser();
     Task<User?> GetUserByEmailAsync(string email);
     Task SaveChangesAsync();
     Task<bool> EmailExistsAsync(string email);
