@@ -13,7 +13,6 @@ namespace DotnetApi.Controllers;
 ///     The controller for handling the authentication routes, passing logic off to the
 ///     services, and returning a response.
 /// </summary>
-/// <param name="context">The DB context, passed in through DI</param>
 public class AuthenticationController(
         IAuthService authService,
         ILogger<AuthenticationController> logger
@@ -50,13 +49,12 @@ public class AuthenticationController(
                 return BadRequest(result);
             }
 
-            // If no error was found, return a "created" status with the result containing the new user entity
-            // TODO: update with a userDto or don't send result in response? (User entity contains password hash)
+            // If no error was found, return a "created" status with the result containing the jwt and refresh token
             return Created($"api/v1/[controller]/register", result);
         }
         catch (Exception ex)
         {
-            _logger.LogCritical("Register failed: " + ex.Message);
+            _logger.LogCritical("Register failed: {message}", ex.Message);
             return StatusCode(StatusCodes.Status500InternalServerError, Result<Exception>.Failure(ex.Message, HttpStatusCode.InternalServerError));
         }
     }
@@ -88,7 +86,7 @@ public class AuthenticationController(
         catch
         {
             // return 500 and log critical error if unsuccessful
-            _logger.LogCritical("Login failed.");
+            _logger.LogCritical("Login failed");
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
@@ -100,18 +98,18 @@ public class AuthenticationController(
     [Authorize]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Logout()
+    public async Task<IActionResult> Logout(string refreshToken)
     {
         try
         {
             // perform logout
-            await HttpContext.SignOutAsync(JwtBearerDefaults.AuthenticationScheme);
-            _logger.LogInformation("User logged out.");
+            await _authenticationService.Logout(refreshToken);
+            _logger.LogInformation("User logged out");
         }
         catch
         {
             // return 500 and log critical error if unsuccessful
-            _logger.LogCritical("Logout failed.");
+            _logger.LogCritical("Logout failed");
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
         
@@ -125,11 +123,13 @@ public class AuthenticationController(
         {
             // handle refresh
             _logger.LogInformation("Refreshing token...");
+            var result = await _authenticationService.Refresh(refreshToken);
+            
             return Ok();
         }
         catch
         {
-            _logger.LogError("Refresh failed.");
+            _logger.LogError("Refresh failed");
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }

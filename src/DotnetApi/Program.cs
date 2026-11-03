@@ -5,6 +5,7 @@ using DotnetApi.Services.Authentication;
 using Microsoft.EntityFrameworkCore;
 using DotnetApi.Contexts;
 using DotnetApi.Helpers;
+using DotnetApi.Middleware;
 using DotnetApi.Models.Common;
 using DotnetApi.Repositories.Authentication;
 
@@ -123,6 +124,9 @@ app.MapSwagger().RequireAuthorization();
 
 app.UseAuthentication(); // decodes the JWT token and sets the user principal for the request
 app.UseAuthorization(); // evaluates permissions against the user principal and the endpoint's authorization policies
+
+// custom middleware
+app.UseMiddleware<UserContextMiddleware>();
 
 app.MapControllers();
 
