@@ -7,6 +7,6 @@ public interface IAuthenticationController
 {
     public Task<IActionResult> Register(RegisterDto payload);
     public Task<IActionResult> Login(LoginDto payload);
-    public Task<IActionResult> Logout();
+    public Task<IActionResult> Logout(string refreshToken);
     public Task<IActionResult> Refresh(string refreshToken);
 }
